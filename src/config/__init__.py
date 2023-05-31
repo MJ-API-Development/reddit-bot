@@ -24,6 +24,11 @@ class APPSettings(BaseSettings):
 
 
 class RedditSettings(BaseSettings):
+    client_id: str = Field(..., env='REDDIT_CLIENT_ID')
+    client_secret: str = Field(..., env='REDDIT_CLIENT_SECRET')
+    user_agent: str = Field(..., env='REDDIT_USER_AGENT')
+    username: str = Field(..., env='REDDIT_USERNAME')
+    password: str = Field(..., env='REDDIT_PASSWORD')
 
     class Config:
         env_file = '.env.development'

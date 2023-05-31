@@ -4,6 +4,7 @@ from src.config import config_instance
 
 reddit_settings = config_instance().REDDIT_SETTINGS
 
+
 class TaskScheduler:
     def __init__(self):
         self._reddit_api = praw.Reddit(
