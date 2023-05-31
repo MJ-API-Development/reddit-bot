@@ -29,6 +29,7 @@ class RedditSettings(BaseSettings):
     user_agent: str = Field(..., env='REDDIT_USER_AGENT')
     username: str = Field(..., env='REDDIT_USERNAME')
     password: str = Field(..., env='REDDIT_PASSWORD')
+    subreddit_name: str = Field(..., env='SUB_REDDIT')
 
     class Config:
         env_file = '.env.development'
