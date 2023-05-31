@@ -7,10 +7,10 @@ class Logging(BaseSettings):
 
 class APPSettings(BaseSettings):
     """APP Confi settings"""
-    APP_NAME: str = Field(default="ESA-Tweeter-Bot")
-    TITLE: str = Field(default="EOD-Stock-API - Financial Data Tweeter Bot")
+    APP_NAME: str = Field(default="ESA-Reddit-Bot")
+    TITLE: str = Field(default="EOD-Stock-API - Financial Data Reddit Bot")
     DESCRIPTION: str = Field(
-        default="Tweeter-Bot to send EOD-Stock-API Financial Data to Tweeter for Promotional Purposes")
+        default="Reddit-Bot to send EOD-Stock-API Financial Data to Reddit for Promotional Purposes")
     VERSION: str = Field(default="1.0.0")
     TERMS: str = Field(default="https://eod-stock-api.site/terms")
     CONTACT_NAME: str = Field(default="MJ API Development")
@@ -23,11 +23,23 @@ class APPSettings(BaseSettings):
     REDOC_URL: str = Field(default='/redoc')
 
 
+class RedditSettings(BaseSettings):
+
+    class Config:
+        env_file = '.env.development'
+        env_file_encoding = 'utf-8'
+
+
 class Settings(BaseSettings):
     EOD_API_KEY: str = Field(..., env='EOD_STOCK_API_KEY')
     DEVELOPMENT_SERVER_NAME: str = Field(..., env='DEVELOPMENT_SERVER_NAME')
     APP_SETTINGS: APPSettings = APPSettings()
+    REDDIT_SETTINGS: RedditSettings = RedditSettings()
     LOGGING: Logging = Logging()
+
+    class Config:
+        env_file = '.env.development'
+        env_file_encoding = 'utf-8'
 
 
 def config_instance() -> Settings:
