@@ -41,6 +41,24 @@ DEFAULT_POSTS = [
         "Create A free API Key today",
         "https://eod-stock-api.site/plan-descriptions/basic"
     ]),
+    compose_default_reds(title="EOD Stock Market API - Professional Plan", post_lines=[
+        "- Exchange & Ticker Data",
+        "- (EOD) Stock Data",
+        "- Fundamental Data",
+        "- Financial News API",
+        "- Social Media Trend Data For Stocks",
+        "Subscribe to our Professional Plan Today",
+        "https://eod-stock-api.site/plan-descriptions/professional"
+    ]),
+    compose_default_reds(title="EOD Stock Market API - Business Plan", post_lines=[
+        "- Exchange & Ticker Data",
+        "- (EOD) Stock Data",
+        "- Fundamental Data",
+        "- Financial News API",
+        "- Social Media Trend Data For Stocks",
+        "Subscribe to our Business Plan today",
+        "https://eod-stock-api.site/plan-descriptions/business"
+    ]),
 
     compose_default_reds(title="Financial & Business News API", post_lines=[
         "- Articles By UUID",
