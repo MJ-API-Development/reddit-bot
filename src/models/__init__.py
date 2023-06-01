@@ -8,6 +8,7 @@ class RedditPost(BaseModel):
     title: str
     selftext: str
     submission_id: str | None
+    media_link: str | None
     created_utc_timestamp: int
     score: int | None
     url: str | None

@@ -1,16 +1,58 @@
-import datetime
 import asyncio
+import datetime
 from asyncio import Queue
 
-from praw.models import SubredditHelper, Submission
-import requests
-from pydantic import BaseSettings, ValidationError
 import praw
+import requests
+from praw.models import Submission
+from pydantic import ValidationError
+
 from src.config import config_instance, RedditSettings
 from src.logger import init_logger
-from src.models import RedditPost, ArticleData
+from src.models import RedditPost
 
 FIVE_MINUTE = 300
+
+
+def create_utc_timestamp() -> int:
+    return int(datetime.datetime.utcnow().timestamp())
+
+
+def compose_default_reds(api_name, post_lines):
+    post_content = "\n".join(post_lines)
+    reddit_post = dict(title=api_name,
+                       selftext=post_content,
+                       created_utc_timestamp=create_utc_timestamp())
+    return RedditPost(**reddit_post)
+
+
+DEFAULT_POSTS = [
+    compose_default_reds("EOD Stock Market API", [
+        "- Exchange & Ticker Data",
+        "- (EOD) Stock Data",
+        "- Fundamental Data",
+        "- Stock Options And Splits Data",
+        "- Financial News API",
+        "- Social Media Trend Data For Stocks",
+        "Create A free API Key today",
+        "https://eod-stock-api.site/plan-descriptions/basic"
+    ]),
+
+    compose_default_reds("Financial & Business News API", [
+        "- Articles By UUID",
+        "- Articles By Publishing Date",
+        "- Articles By Stock Tickers",
+        "- Articles By Exchange",
+        "- Get List of Exchanges & Tickers",
+        "- Get List of Publishers & Articles By Publisher",
+        "Create A free API Key today",
+        "https://bit.ly/financial-business-news-api"
+    ])
+]
+
+
+def create_user_agent(client_id: str) -> str:
+    return f"Python:{client_id}:1.0 (by /u/mobius-crypt)"
 
 
 class TaskScheduler:
@@ -23,9 +65,11 @@ class TaskScheduler:
         self._reddit_api = praw.Reddit(
             client_id=reddit_settings.client_id,
             client_secret=reddit_settings.client_secret,
-            user_agent=reddit_settings.user_agent,
             username=reddit_settings.username,
-            password=reddit_settings.password)
+            password=reddit_settings.password,
+            user_agent=create_user_agent(reddit_settings.client_id)
+        )
+        self._access_token: str | None = None
         self._subreddit_name = reddit_settings.subreddit_name
         self._logger = init_logger(self.__class__.__name__)
 
@@ -53,36 +97,54 @@ class TaskScheduler:
         :return:
         """
         try:
+            # submission = make_post(access_token=self._access_token, subreddit=self._subreddit_name,
+            #                        title=post.title, content=post.selftext)
             subreddit = self._reddit_api.subreddit(self._subreddit_name)
-            submission: Submission = subreddit.submit(title=post.title, selftext=post.selftext, url=post.url)
-            post.submission_id = submission.id
-            _submission = post, submission
-            self.reddit_submissions.append(_submission)
+            if post.media_link:
+                submission = subreddit.submit(title=post.title, url=post.media_link)
+            else:
+                submission = subreddit.submit(title=post.title, selftext=post.selftext)
+
+            self._logger.info(f"submission : {submission}")
+
             return True
         except Exception as e:
             self._logger.error(f"Error submitting reddit post: {str(e)}")
         return False
 
-    async def create_article_post(self, article: ArticleData) -> RedditPost | None:
+    async def create_article_post(self, article: dict[str, str]) -> RedditPost | None:
         """
             **compile_article_post**
                 takes in financial article and create a reddit post
         :param article:
         :return:
         """
-        _post = dict(title=article.title, selftext=article.sentiment.article_tldr,
-                     created_utc_timestamp=create_utc_timestamp())
+        self_text = article.get('sentiment', {}).get('article_tldr') or article.get('sentiment', {}).get('article')
+        if not self_text:
+            self_text = article.get('title')
+        self_text = f"{self_text}/n {article.get('link')}"
+        image_resolutions: list[dict[str, str | int]] = article.get('thumbnail', {}).get('resolutions')
+        _post = dict()
+        if image_resolutions:
+            _resolution: dict[str, str | int] = image_resolutions[0]
+            _post.update(dict(media_link=_resolution.get('url')))
+
+        _post.update(title=article.get('title'), selftext=self_text, created_utc_timestamp=create_utc_timestamp())
         try:
             reddit_post: RedditPost = RedditPost(**_post)
             self._logger.info(f'created Reddit Post : {reddit_post}')
             return reddit_post
 
         except ValidationError as e:
-            self._logger.error(f"Error occured creating reddit post")
+            self._logger.error(f"Error occurred creating reddit post")
 
         return None
 
     async def create_posts(self):
+
+        for reddit_post in DEFAULT_POSTS:
+            await self._reddit_posts_queue.put(reddit_post)
+
         while self._article_queue.qsize() > 0:
             self._logger.info(f"Articles Remaining : {self._article_queue.qsize()}")
             article = await self._article_queue.get()
@@ -96,6 +158,8 @@ class TaskScheduler:
 
     async def run(self):
         self._logger.info("Started Run")
+        # session, access_token = await authenticate_reddit()
+        # self._access_token = access_token
         if self._reddit_posts_queue.qsize() == 0:
             response: dict[str, str | dict[str, str] | int] = await self.fetch_articles()
             if response.get('status'):
@@ -114,7 +178,3 @@ class TaskScheduler:
                     await asyncio.sleep(delay=self._error_delay)
                     reddit_post: RedditPost = await self._reddit_posts_queue.get()
                     reddit_post_sent = await self.submit_article_post(post=reddit_post)
-
-
-def create_utc_timestamp() -> int:
-    return int(datetime.datetime.utcnow().timestamp())
