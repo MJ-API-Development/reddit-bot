@@ -18,16 +18,20 @@ def create_utc_timestamp() -> int:
     return int(datetime.datetime.utcnow().timestamp())
 
 
-def compose_default_reds(api_name, post_lines):
+def compose_default_reds(title: str, post_lines: list[str], url: str| None = None):
     post_content = "\n".join(post_lines)
-    reddit_post = dict(title=api_name,
-                       selftext=post_content,
-                       created_utc_timestamp=create_utc_timestamp())
+    time_stamp = create_utc_timestamp()
+    reddit_post = dict(title=title,created_utc_timestamp=time_stamp)
+    if url:
+        reddit_post.update(dict(media_link=url))
+    else:
+        reddit_post.update(dict(selftext=post_content))
+
     return RedditPost(**reddit_post)
 
 
 DEFAULT_POSTS = [
-    compose_default_reds("EOD Stock Market API", [
+    compose_default_reds(title="EOD Stock Market API", post_lines=[
         "- Exchange & Ticker Data",
         "- (EOD) Stock Data",
         "- Fundamental Data",
@@ -38,7 +42,7 @@ DEFAULT_POSTS = [
         "https://eod-stock-api.site/plan-descriptions/basic"
     ]),
 
-    compose_default_reds("Financial & Business News API", [
+    compose_default_reds(title="Financial & Business News API", post_lines=[
         "- Articles By UUID",
         "- Articles By Publishing Date",
         "- Articles By Stock Tickers",
@@ -101,7 +105,8 @@ class TaskScheduler:
             #                        title=post.title, content=post.selftext)
             subreddit = self._reddit_api.subreddit(self._subreddit_name)
             if post.media_link:
-                submission = subreddit.submit(title=post.title, url=post.media_link)
+                submission: Submission = subreddit.submit(title=post.title, url=post.media_link)
+                submission.reply(body=post.selftext)
             else:
                 submission = subreddit.submit(title=post.title, selftext=post.selftext)
 
@@ -130,6 +135,7 @@ class TaskScheduler:
             _post.update(dict(media_link=_resolution.get('url')))
 
         _post.update(title=article.get('title'), selftext=self_text, created_utc_timestamp=create_utc_timestamp())
+
         try:
             reddit_post: RedditPost = RedditPost(**_post)
             self._logger.info(f'created Reddit Post : {reddit_post}')
