@@ -52,12 +52,16 @@ class TaskScheduler:
         :param post:
         :return:
         """
-        subreddit = self._reddit_api.subreddit(self._subreddit_name)
-        submission: Submission = subreddit.submit(title=post.title, selftext=post.selftext, url=post.url)
-        post.submission_id = submission.id
-        _submission = post, submission
-        self.reddit_submissions.append(_submission)
-        return True
+        try:
+            subreddit = self._reddit_api.subreddit(self._subreddit_name)
+            submission: Submission = subreddit.submit(title=post.title, selftext=post.selftext, url=post.url)
+            post.submission_id = submission.id
+            _submission = post, submission
+            self.reddit_submissions.append(_submission)
+            return True
+        except Exception as e:
+            self._logger.error(f"Error submitting reddit post: {str(e)}")
+        return False
 
     async def create_article_post(self, article: ArticleData) -> RedditPost | None:
         """
