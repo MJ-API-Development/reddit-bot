@@ -26,7 +26,6 @@ class RedditComment(BaseModel):
     permalink: str
 
 
-
 class Sentiment(BaseModel):
     article: str
     article_tldr: str
