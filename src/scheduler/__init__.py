@@ -18,10 +18,10 @@ def create_utc_timestamp() -> int:
     return int(datetime.datetime.utcnow().timestamp())
 
 
-def compose_default_reds(title: str, post_lines: list[str], url: str| None = None):
+def compose_default_reds(title: str, post_lines: list[str], url: str | None = None):
     post_content = "\n".join(post_lines)
     time_stamp = create_utc_timestamp()
-    reddit_post = dict(title=title,created_utc_timestamp=time_stamp)
+    reddit_post = dict(title=title, created_utc_timestamp=time_stamp)
     if url:
         reddit_post.update(dict(media_link=url))
     else:
@@ -142,7 +142,7 @@ class TaskScheduler:
             return reddit_post
 
         except ValidationError as e:
-            self._logger.error(f"Error occurred creating reddit post")
+            self._logger.error(f"Error occurred creating reddit post : {str(e)}")
 
         return None
 
