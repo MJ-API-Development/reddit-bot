@@ -195,10 +195,10 @@ class TaskScheduler:
             # will use the articles on articles queue to create reddit posts
             await self.create_posts()
 
-            reddit_post: RedditPost = await self._reddit_posts_queue.get()
-            if reddit_post:
+        reddit_post: RedditPost = await self._reddit_posts_queue.get()
+        if reddit_post:
+            reddit_post_sent = await self.submit_article_post(post=reddit_post)
+            while not reddit_post_sent:
+                await asyncio.sleep(delay=self._error_delay)
+                reddit_post: RedditPost = await self._reddit_posts_queue.get()
                 reddit_post_sent = await self.submit_article_post(post=reddit_post)
-                while not reddit_post_sent:
-                    await asyncio.sleep(delay=self._error_delay)
-                    reddit_post: RedditPost = await self._reddit_posts_queue.get()
-                    reddit_post_sent = await self.submit_article_post(post=reddit_post)
